@@ -1,4 +1,4 @@
-## SMUS TeamCode Module
+## TeamCode Module
 
 Welcome!
 
