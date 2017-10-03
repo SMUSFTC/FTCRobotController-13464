@@ -24,7 +24,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 public class GamepadEventManager
 {
     public interface GamepadEventHandler<T> { void handleGamepadEvent(T currentValue, T previousValue); }
-    public enum HandlerTriggerMode { TICK, CHANGE }
+    public enum HandlerTriggerMode { TICK, CHANGE, DYNAMIC }
 
     public GamepadEventManager(Gamepad targetGamepad) { }
     public void runEventLoop(HandlerTriggerMode triggerMode) { }
