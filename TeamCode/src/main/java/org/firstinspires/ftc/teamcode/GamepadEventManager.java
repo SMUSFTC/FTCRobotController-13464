@@ -23,12 +23,15 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 public class GamepadEventManager
 {
-    public interface GamepadEventHandler<T> { void handleGamepadEvent(T currentValue, T previousValue); }
-    public enum HandlerTriggerMode { TICK, CHANGE, DYNAMIC }
+    public interface GamepadEventHandler<T> { enum TriggerMode { TICK, CHANGE, DYNAMIC } void handleGamepadEvent(T currentValue, T previousValue); }
 
-    public GamepadEventManager(Gamepad targetGamepad) { }
-    public void runEventLoop(HandlerTriggerMode triggerMode) { }
+    public class Configuration
+    {
+        // NOTE: Pression is defined by the Oxford Dictionaries and is thus a valid word, so I will use it even if it's in the bottom 30% of all English words ever. Deal with it.
+        GamepadEventHandler<Boolean> dPadUpPressionHandler, dPadDownPressionHandler, dPadLeftPressionHandler, dPadRightPressionHandler, leftJoystickPressionHandler, rightJoystickPressionHandler, rightBumperPressionHandler, leftBumperPressionHandler;
+        GamepadEventHandler<Integer> leftJoystickXHandler, leftJoystickYHandler, rightJoystickXHandler, rightJoystickYHandler;
+    }
 
-    GamepadEventHandler<Boolean> dPadUpHandler, dPadDownHandler, dPadLeftHandler, dPadRightHandler, leftJoystickZHandler, rightJoystickZHandler;
-    GamepadEventHandler<Integer> leftJoystickXHandler, leftJoystickYHandler, rightJoystickXHandler, rightJoystickYHandler;
+    public GamepadEventManager(Gamepad targetGamepad, Configuration handlingConfiguration) { }
+    public void runEventLoop(GamepadEventHandler.TriggerMode handlingTriggerMode) { }
 }
