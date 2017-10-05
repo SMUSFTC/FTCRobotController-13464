@@ -71,9 +71,10 @@ public class GamepadEventManager
             if (tickBased || cachedRightJoystickX != targetGamepad.right_stick_x) handlingConfiguration.rightJoystickXHandler.handleGamepadEvent(targetGamepad.right_stick_x, cachedRightJoystickX);
         }}).start();
         new Thread(new Runnable() { @Override public void run() {
-            if (tickBased || cachedLeftJoystickY != targetGamepad.left_stick_y) handlingConfiguration.leftJoystickYHandler.handleGamepadEvent(targetGamepad.left_stick_y, cachedLeftJoystickY);
+            if (tickBased || cachedRightJoystickY != targetGamepad.right_stick_y) handlingConfiguration.rightJoystickYHandler.handleGamepadEvent(targetGamepad.right_stick_y, cachedRightJoystickY);
         }}).start();
         barrier.await();
+        updateValueCache();
     }
 
     public void updateValueCache()
