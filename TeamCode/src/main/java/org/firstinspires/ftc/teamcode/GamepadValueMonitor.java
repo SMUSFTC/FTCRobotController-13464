@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
@@ -13,14 +15,17 @@ public class GamepadValueMonitor
 {
     public interface ChangeInformer { void inform(); }
     public interface ValueFetcher<T> { T fetch(); }
-    public static class MonitoredValue<T> { public ValueFetcher<T> fetcher; public ChangeInformer informer; T currentValue, previousValue; }
-
-    public static void updateValue(MonitoredValue value)
-    {
-        value.previousValue = value.currentValue;
-        value.currentValue = value.fetcher.fetch();
-    }
+    public static class MonitoredValue<T> { public void updateValue() { previousValue = currentValue; currentValue = fetcher.fetch(); if (tickBased || previousValue != currentValue) informer.inform(); } public boolean tickBased = true; public ValueFetcher<T> fetcher; public ChangeInformer informer; T currentValue, previousValue; }
 
     MonitoredValue<Boolean> leftStickButton, rightStickButton, leftBumper, rightBumper, a, b, x, y, start, back, dPadUp, dPadDown, dPadLeft, dPadRight;
     MonitoredValue<Float> leftStickX, leftStickY, rightStickX, rightStickY, leftTrigger;
+
+    public List<MonitoredValue> monitoredValues = new ArrayList<MonitoredValue>();
+
+    public GamepadValueMonitor(List<MonitoredValue> valuesToMonitor) { monitoredValues = new ArrayList<>(valuesToMonitor); }
+
+    public void initialize()
+    {
+
+    }
 }
