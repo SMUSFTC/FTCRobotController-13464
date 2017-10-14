@@ -23,30 +23,22 @@ public class GameControl_Implementation_TEST extends LinearOpMode
         left.setDirection(DcMotorSimple.Direction.REVERSE);
 
         GamepadEventManager.Configuration eventManagerConfiguration = new GamepadEventManager.Configuration();
-        eventManagerConfiguration.dPadUpPressionHandler = new GamepadEventManager.GamepadEventHandler<Boolean>() { @Override public void handleGamepadEvent(Boolean currentValue, Boolean previousValue)
-        {
-            right.setPower(1);
-            left.setPower(right.getPower());
-        }};
-        eventManagerConfiguration.dPadDownPressionHandler = new GamepadEventManager.GamepadEventHandler<Boolean>() { @Override public void handleGamepadEvent(Boolean currentValue, Boolean previousValue)
-        {
-            right.setPower(0);
-            left.setPower(right.getPower());
-        }};
+        eventManagerConfiguration.dPadDownPressionHandler = new GamepadEventManager.GamepadEventHandler<Boolean>() {
+            @Override public void handleGamepadEvent(Boolean currentValue, Boolean previousValue)
+            {
 
+            }
+        };
 
-        GamepadEventManager gamepadEventManager = new GamepadEventManager(gamepad1, eventManagerConfiguration);
+        //GamepadEventManager gamepadEventManager = new GamepadEventManager(gamepad1, eventManagerConfiguration, GamepadEventManager.GamepadEventHandler.TriggerMode.CHANGE);
+
         waitForStart();
 
-        while(opModeIsActive()) gamepadEventManager.runEventHandlers(false);
-    }
-}
-
-/*
-
-if (gamepad1.b) wheelsInverse=!wheelsInverse;
+        while(opModeIsActive())
+        {
+            if (gamepad1.b) wheelsInverse=!wheelsInverse;
             left.setPower((wheelsInverse?-1:1)*(gamepad1.left_stick_y)+gamepad1.left_stick_x);
             right.setPower((wheelsInverse?-1:1)*(gamepad1.left_stick_y)-gamepad1.left_stick_x);
-
-
-* */
+        }
+    }
+}
