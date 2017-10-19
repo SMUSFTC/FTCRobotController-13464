@@ -6,6 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 /**
  * Created by alex.fanat on 12/3/2016.
  */
@@ -18,24 +20,30 @@ public class Servo_Control_Test extends LinearOpMode
 
     @Override public void runOpMode() throws InterruptedException
     {
-        armServoLeft = hardwareMap.servo.get("armServoLeft");
         armServoRight = hardwareMap.servo.get("armServoRight");
+        armServoLeft = hardwareMap.servo.get("armServoLeft");
+        armServoLeft.setDirection(Servo.Direction.REVERSE);
 
-        GamepadValueMonitor valueMonitor = new GamepadValueMonitor(gamepad1, new GamepadValueMonitor.Fetchable<Boolean>() { @Override public Boolean fetch() { return opModeIsActive(); } })
+        telemetry.addLine("The servos have been found in the hardwareMap.");
+        telemetry.update();
+
+        GamepadValueMonitor valueMonitor = new GamepadValueMonitor(gamepad1, new GamepadValueMonitor.Fetchable<Boolean>() { @Override public Boolean fetch() { return opModeIsActive(); } }, new GamepadValueMonitor.Fetchable<Telemetry>() { @Override public Telemetry fetch() { return telemetry; } })
         {{
-            dPadUp.updateInformer = new Runnable() { @Override public void run() { armServoLeft.setPosition(Servo.MAX_POSITION); armServoRight.setPosition(Servo.MIN_POSITION); } };
+            dPadUp.updateInformer = new Runnable() { @Override public void run() { if (dPadUp.currentValue) { armServoLeft.setPosition(Servo.MAX_POSITION); armServoRight.setPosition(Servo.MAX_POSITION); } } };
+            dPadUp.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
             dPadUp.active = true;
 
-            dPadDown.updateInformer = new Runnable() { @Override public void run() { armServoLeft.setPosition(Servo.MIN_POSITION); armServoRight.setPosition(Servo.MAX_POSITION); } };
+            dPadDown.updateInformer = new Runnable() { @Override public void run() { if (dPadDown.currentValue) { armServoLeft.setPosition(Servo.MIN_POSITION); armServoRight.setPosition(Servo.MIN_POSITION); } } };
+            dPadDown.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
             dPadDown.active = true;
 
-            start.updateInformer = new Runnable() { @Override public void run() { armServoLeft.setPosition(0.5144); armServoRight.setPosition(0.39); } };
+            start.updateInformer = new Runnable() { @Override public void run() { if (start.currentValue) { armServoLeft.setPosition(0.5); armServoRight.setPosition(0.5); } } };
+            start.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
             start.active = true;
         }};
 
         waitForStart();
-
-        valueMonitor.start.updateInformer.run();
         valueMonitor.startMonitoring(true);
+        while (opModeIsActive());
     }
 }
