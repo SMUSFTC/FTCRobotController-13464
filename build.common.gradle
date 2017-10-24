@@ -16,7 +16,6 @@
  */
 
 import java.util.regex.Pattern
-
 apply plugin: 'com.android.application'
 
 android {
@@ -100,4 +99,5 @@ repositories {
         dirs rootProject.file('libs')
     }
 }
+
 apply from: 'build.release.gradle'

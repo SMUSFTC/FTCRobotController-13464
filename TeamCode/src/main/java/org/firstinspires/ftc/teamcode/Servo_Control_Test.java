@@ -6,8 +6,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-
 /**
  * Created by alex.fanat on 12/3/2016.
  */
@@ -15,32 +13,85 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @TeleOp(name="Servo Control Test",group="Linear OpMode")
 public class Servo_Control_Test extends LinearOpMode
 {
-    Servo armServoLeft;
-    Servo armServoRight;
+    /*Servo leftArmServo;
+    Servo rightArmServo;*/
+
+    DcMotor frontLeftDriveMotor;
+    DcMotor backLeftDriveMotor;
+    DcMotor frontRightDriveMotor;
+    DcMotor backRightDriveMotor;
 
     @Override public void runOpMode() throws InterruptedException
     {
-        armServoRight = hardwareMap.servo.get("armServoRight");
-        armServoLeft = hardwareMap.servo.get("armServoLeft");
-        armServoLeft.setDirection(Servo.Direction.REVERSE);
+        /*rightArmServo = hardwareMap.servo.get("rightArmHingeServo");
+        leftArmServo = hardwareMap.servo.get("leftArmHingeServo");
 
-        telemetry.addLine("The servos have been found in the hardwareMap.");
+        leftArmServo.setDirection(Servo.Direction.REVERSE);*/
+
+        frontLeftDriveMotor = hardwareMap.dcMotor.get("frontLeftDriveMotor");
+        backLeftDriveMotor = hardwareMap.dcMotor.get("backLeftDriveMotor");
+        frontRightDriveMotor = hardwareMap.dcMotor.get("frontRightDriveMotor");
+        backRightDriveMotor = hardwareMap.dcMotor.get("backRightDriveMotor");
+
+        frontLeftDriveMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeftDriveMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        telemetry.addLine("The connected devices have been initialized.");
         telemetry.update();
+        telemetry.setAutoClear(false);
 
-        GamepadValueMonitor valueMonitor = new GamepadValueMonitor(gamepad1, new GamepadValueMonitor.Fetchable<Boolean>() { @Override public Boolean fetch() { return opModeIsActive(); } }, new GamepadValueMonitor.Fetchable<Telemetry>() { @Override public Telemetry fetch() { return telemetry; } })
+        GamepadValueMonitor valueMonitor = new GamepadValueMonitor(gamepad1, () -> opModeIsActive(), () -> telemetry)
         {{
-            dPadUp.updateInformer = new Runnable() { @Override public void run() { if (dPadUp.currentValue) { armServoLeft.setPosition(Servo.MAX_POSITION); armServoRight.setPosition(Servo.MAX_POSITION); } } };
-            dPadUp.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
+            /*dPadUp.updateInformer = () ->
+            {
+                leftArmServo.setPosition(Servo.MAX_POSITION);
+                rightArmServo.setPosition(Servo.MAX_POSITION);
+            };
+            dPadUp.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            dPadUp.customUpdateCondition = () -> dPadUp.currentValue;
             dPadUp.active = true;
 
-            dPadDown.updateInformer = new Runnable() { @Override public void run() { if (dPadDown.currentValue) { armServoLeft.setPosition(Servo.MIN_POSITION); armServoRight.setPosition(Servo.MIN_POSITION); } } };
-            dPadDown.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
+            dPadDown.updateInformer = () ->
+            {
+                leftArmServo.setPosition(Servo.MIN_POSITION);
+                rightArmServo.setPosition(Servo.MIN_POSITION);
+            };
+            dPadDown.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            dPadDown.customUpdateCondition = () -> dPadDown.currentValue;
             dPadDown.active = true;
 
-            start.updateInformer = new Runnable() { @Override public void run() { if (start.currentValue) { armServoLeft.setPosition(0.5); armServoRight.setPosition(0.5); } } };
-            start.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
+            start.updateInformer = () ->
+            {
+                leftArmServo.setPosition(0.5);
+                rightArmServo.setPosition(0.5);
+            };
+            start.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            start.customUpdateCondition = () -> start.currentValue;
             start.active = true;
+
+            // For some reason, the right stick's values are spread across the triggers; the y-axis is the right trigger, and the x-axis is the other trigger.
+            rightStickY.updateInformer = () -> leftArmServo.setPosition((rightStickY.currentValue / 2) + .5);
+            rightStickY.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
+            rightStickY.active = true;
+
+            rightStickX.updateInformer = () -> rightArmServo.setPosition((rightStickX.currentValue / 2) + .5);
+            rightStickX.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
+            rightStickX.active = true;*/
+
+            leftStickY.active = leftStickX.active = true;
+
+            loop = () ->
+            {
+                frontLeftDriveMotor.setPower(-leftStickY.currentValue + leftStickX.currentValue);
+                backLeftDriveMotor.setPower(-leftStickY.currentValue + leftStickX.currentValue);
+                frontRightDriveMotor.setPower(-leftStickY.currentValue - leftStickX.currentValue);
+                backRightDriveMotor.setPower(-leftStickY.currentValue - leftStickX.currentValue);
+            };
         }};
+
+        telemetry.addLine("The handlers have been initialized.");
+        telemetry.addLine("Awaiting start...");
+        telemetry.update();
 
         waitForStart();
         valueMonitor.startMonitoring(true);
