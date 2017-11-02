@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -10,9 +13,8 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Created by alex.fanat on 12/3/2016.
  */
 
-@TeleOp(name="Servo Control Test",group="Linear OpMode")
-public class Servo_Control_Test extends LinearOpMode
-{
+@TeleOp(name = "Servo Control Test", group = "Linear OpMode")
+public class Servo_Control_Test extends LinearOpMode {
     /*Servo leftArmServo;
     Servo rightArmServo;*/
 
@@ -21,8 +23,8 @@ public class Servo_Control_Test extends LinearOpMode
     DcMotor frontRightDriveMotor;
     DcMotor backRightDriveMotor;
 
-    @Override public void runOpMode() throws InterruptedException
-    {
+    @Override
+    public void runOpMode() throws InterruptedException {
         /*rightArmServo = hardwareMap.servo.get("rightArmHingeServo");
         leftArmServo = hardwareMap.servo.get("leftArmHingeServo");
 
@@ -40,8 +42,10 @@ public class Servo_Control_Test extends LinearOpMode
         telemetry.update();
         telemetry.setAutoClear(false);
 
-        GamepadValueMonitor valueMonitor = new GamepadValueMonitor(gamepad1, () -> opModeIsActive(), () -> telemetry)
-        {{
+        AccelerateDecelerateInterpolator rightInterp = new AccelerateDecelerateInterpolator();
+        AccelerateDecelerateInterpolator leftInterp = new AccelerateDecelerateInterpolator();
+
+        GamepadValueMonitor valueMonitor = new GamepadValueMonitor(gamepad1, () -> opModeIsActive(), () -> telemetry) {{
             /*dPadUp.updateInformer = () ->
             {
                 leftArmServo.setPosition(Servo.MAX_POSITION);
@@ -78,14 +82,31 @@ public class Servo_Control_Test extends LinearOpMode
             rightStickX.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
             rightStickX.active = true;*/
 
-            leftStickY.active = leftStickX.active = true;
+            leftStickY.active = leftStickX.active = dPadRight.active = dPadLeft.active = true;
+
+            dPadRight.updateInformer = () ->
+            {
+                backLeftDriveMotor.setPower(1.0);
+                backRightDriveMotor.setPower(-1.0);
+            };
+            dPadRight.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            dPadRight.customUpdateCondition = () -> dPadRight.currentValue;
+
+            dPadLeft.updateInformer = () ->
+            {
+                backLeftDriveMotor.setPower(-1.0);
+                backRightDriveMotor.setPower(1.0);
+            };
+            dPadLeft.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            dPadLeft.customUpdateCondition = () -> dPadLeft.currentValue;
+
 
             loop = () ->
             {
-                frontLeftDriveMotor.setPower(-leftStickY.currentValue + leftStickX.currentValue);
-                backLeftDriveMotor.setPower(-leftStickY.currentValue + leftStickX.currentValue);
-                frontRightDriveMotor.setPower(-leftStickY.currentValue - leftStickX.currentValue);
-                backRightDriveMotor.setPower(-leftStickY.currentValue - leftStickX.currentValue);
+                frontLeftDriveMotor.setPower(Math.signum(-leftStickY.currentValue + leftStickX.currentValue) * leftInterp.getInterpolation(-leftStickY.currentValue + leftStickX.currentValue));
+                backLeftDriveMotor.setPower(frontLeftDriveMotor.getPower());
+                frontRightDriveMotor.setPower(Math.signum(-leftStickY.currentValue - leftStickX.currentValue) * rightInterp.getInterpolation(-leftStickY.currentValue - leftStickX.currentValue));
+                backRightDriveMotor.setPower(frontRightDriveMotor.getPower());
             };
         }};
 
@@ -95,6 +116,6 @@ public class Servo_Control_Test extends LinearOpMode
 
         waitForStart();
         valueMonitor.startMonitoring(true);
-        while (opModeIsActive());
+        while (opModeIsActive()) ;
     }
 }
