@@ -30,11 +30,11 @@ public class GamepadValueMonitor
         }
 
         @NonNull public Fetchable<T> value;
-        @NonNull Fetchable<Boolean> customUpdateCondition;
+        @NonNull public Fetchable<Boolean> customUpdateCondition;
         @NonNull public Runnable updateInformer = () -> { };
 
-        T currentValue, previousValue;
-        UpdateMode activeUpdateMode = UpdateMode.TICK;
+        public T currentValue, previousValue;
+        public UpdateMode activeUpdateMode = UpdateMode.TICK;
     }
 
     public static class MonitoredGamepadValue<T> extends MonitoredValue<T> { public boolean active = false; public String identifier = "MonitoredGamepadValue"; }

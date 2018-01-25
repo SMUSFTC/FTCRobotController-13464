@@ -10,21 +10,14 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
-@Autonomous(name = "org.firstinspires.ftc.teamcode.tests.AutonomousLeftTest", group = "Tests")
-public class AutonomousLeftTest extends LinearOpMode {
+@Autonomous(name = "Autonomous")
+public class AutonomousLeftTest extends LinearOpMode
+{
+    Servo leftArmServo, rightArmServo, linearActuator;
+    DcMotor frontLeftDriveMotor, backLeftDriveMotor, frontRightDriveMotor, backRightDriveMotor;
 
-    Servo leftArmServo;
-    Servo rightArmServo;
-
-    Servo linearActuator;
-
-    DcMotor frontLeftDriveMotor;
-    DcMotor backLeftDriveMotor;
-    DcMotor frontRightDriveMotor;
-    DcMotor backRightDriveMotor;
-
-    @Override
-    public void runOpMode() throws InterruptedException {
+    @Override public void runOpMode() throws InterruptedException
+    {
 
         rightArmServo = hardwareMap.servo.get("rightArmHingeServo");
         leftArmServo = hardwareMap.servo.get("leftArmHingeServo");
@@ -47,12 +40,16 @@ public class AutonomousLeftTest extends LinearOpMode {
 
         waitForStart();
 
+        /**
+         * Read the pictogram
+         */
+
         frontLeftDriveMotor.setPower(-1);
         backLeftDriveMotor.setPower(-1);
         frontRightDriveMotor.setPower(-1);
         backRightDriveMotor.setPower(-1);
 
-        Thread.sleep(500);
+        sleep(1000);
 
         frontLeftDriveMotor.setPower(0);
         backLeftDriveMotor.setPower(0);

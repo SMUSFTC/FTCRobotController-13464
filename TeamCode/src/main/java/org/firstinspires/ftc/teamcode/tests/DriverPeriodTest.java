@@ -6,47 +6,22 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Jones;
+import org.firstinspires.ftc.teamcode.RobotController;
 import org.firstinspires.ftc.teamcode.utils.GamepadValueMonitor;
 
 /**
  * Created by Rashid on 11/18/2017.
  */
 
-@TeleOp(name = "Driver Mode Test", group = "Tests")
 public class DriverPeriodTest extends LinearOpMode {
-
-    private static final double LINEARACTUATOR_MAX = 0.82;
-    private static final double LINEARACTUATOR_MIN = 0.17;
-    private static final double LINEARACTUATOR_INCREMENT = 0.001;
-
-    Servo leftArmServo;
-    Servo rightArmServo;
-
-    Servo linearActuator;
-
-    DcMotor frontLeftDriveMotor;
-    DcMotor backLeftDriveMotor;
-    DcMotor frontRightDriveMotor;
-    DcMotor backRightDriveMotor;
 
     public void runOpMode() throws InterruptedException {
 
-        rightArmServo = hardwareMap.servo.get("rightArmHingeServo");
-        leftArmServo = hardwareMap.servo.get("leftArmHingeServo");
+        RobotController.setCurrentOpMode(this);
+        Jones jones = new Jones();
 
-        leftArmServo.setDirection(Servo.Direction.REVERSE);
-
-        linearActuator = hardwareMap.servo.get("linearActuator");
-
-        frontLeftDriveMotor = hardwareMap.dcMotor.get("frontLeftDriveMotor");
-        backLeftDriveMotor = hardwareMap.dcMotor.get("backLeftDriveMotor");
-        frontRightDriveMotor = hardwareMap.dcMotor.get("frontRightDriveMotor");
-        backRightDriveMotor = hardwareMap.dcMotor.get("backRightDriveMotor");
-
-        frontLeftDriveMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        backLeftDriveMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        telemetry.addLine("The connected devices have been initialized.");
+        telemetry.addLine("Jones has been initialized.");
         telemetry.update();
         telemetry.setAutoClear(false);
 
@@ -55,20 +30,14 @@ public class DriverPeriodTest extends LinearOpMode {
 
             dPadRight.updateInformer = () ->
             {
-                frontLeftDriveMotor.setPower(0.4);
-                backLeftDriveMotor.setPower(0.4);
-                frontRightDriveMotor.setPower(0.2);
-                backRightDriveMotor.setPower(0.2);
+                jones.turnRight();
             };
             dPadRight.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             dPadRight.customUpdateCondition = () -> dPadRight.currentValue;
 
             dPadLeft.updateInformer = () ->
             {
-                frontLeftDriveMotor.setPower(0.2);
-                backLeftDriveMotor.setPower(0.2);
-                frontRightDriveMotor.setPower(0.4);
-                backRightDriveMotor.setPower(0.4);
+                jones.turnLeft();
             };
             dPadLeft.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             dPadLeft.customUpdateCondition = () -> dPadLeft.currentValue;
@@ -76,18 +45,15 @@ public class DriverPeriodTest extends LinearOpMode {
 
             loop = () ->
             {
-                frontLeftDriveMotor.setPower((-leftStickY.currentValue + leftStickX.currentValue) * 0.6);
-                backLeftDriveMotor.setPower(frontLeftDriveMotor.getPower());
-                frontRightDriveMotor.setPower((-leftStickY.currentValue - leftStickX.currentValue) * 0.6);
-                backRightDriveMotor.setPower(frontRightDriveMotor.getPower());
+                jones.setPowerLeftDrive((-leftStickY.currentValue + leftStickX.currentValue) * 0.6);
+                jones.setPowerRightDrive((-leftStickY.currentValue - leftStickX.currentValue) * 0.6);
             };
         }};
 
         GamepadValueMonitor valueMonitorGamepad2 = new GamepadValueMonitor(gamepad2, () -> opModeIsActive(), () -> telemetry) {{
             dPadUp.updateInformer = () ->
             {
-                leftArmServo.setPosition(Servo.MAX_POSITION);
-                rightArmServo.setPosition(Servo.MAX_POSITION);
+                jones.armMaxPosition();
             };
             dPadUp.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             dPadUp.customUpdateCondition = () -> dPadUp.currentValue;
@@ -95,8 +61,7 @@ public class DriverPeriodTest extends LinearOpMode {
 
             dPadDown.updateInformer = () ->
             {
-                leftArmServo.setPosition(Servo.MIN_POSITION);
-                rightArmServo.setPosition(Servo.MIN_POSITION);
+                jones.armMinPosition();
             };
             dPadDown.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             dPadDown.customUpdateCondition = () -> dPadDown.currentValue;
@@ -104,37 +69,39 @@ public class DriverPeriodTest extends LinearOpMode {
 
             start.updateInformer = () ->
             {
-                leftArmServo.setPosition(0.5);
-                rightArmServo.setPosition(0.5);
+                jones.armSetPosition(0.5);
+                jones.setLiftPosition(0);
             };
             start.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             start.customUpdateCondition = () -> start.currentValue;
             start.active = true;
 
-            // For some reason, the right stick's values are spread across the triggers; the y-axis is the right trigger, and the x-axis is the other trigger.
-            rightStickY.updateInformer = () -> leftArmServo.setPosition((rightStickY.currentValue / 2) + .5);
-            rightStickY.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
-            rightStickY.active = true;
-
-            rightStickX.updateInformer = () -> rightArmServo.setPosition((rightStickX.currentValue / 2) + .5);
-            rightStickX.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
-            rightStickX.active = true;
-
             y.updateInformer = () ->
             {
-                linearActuator.setPosition(linearActuator.getPosition() + LINEARACTUATOR_INCREMENT > LINEARACTUATOR_MAX ? linearActuator.getPosition() : linearActuator.getPosition() + LINEARACTUATOR_INCREMENT);
+                if (y.currentValue)
+                    jones.addToLiftPosition(0.005);
             };
-            y.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
-            y.customUpdateCondition = () -> y.currentValue;
+            y.activeUpdateMode = MonitoredValue.UpdateMode.TICK;
             y.active = true;
 
             a.updateInformer = () ->
             {
-                linearActuator.setPosition(linearActuator.getPosition() - LINEARACTUATOR_INCREMENT < LINEARACTUATOR_MIN ? linearActuator.getPosition() : linearActuator.getPosition() - LINEARACTUATOR_INCREMENT);
+                if (a.currentValue)
+                    jones.addToLiftPosition(-0.005);
             };
-            a.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
-            a.customUpdateCondition = () -> a.currentValue;
+            a.activeUpdateMode = MonitoredValue.UpdateMode.TICK;
             a.active = true;
+
+            x.updateInformer = () -> jones.linearActuatorMin();
+            x.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            x.customUpdateCondition = () -> x.currentValue;
+            x.active = true;
+
+            b.updateInformer = () -> jones.linearActuatorMax();
+            b.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            b.customUpdateCondition = () -> b.currentValue;
+            b.active = true;
+
         }};
 
 

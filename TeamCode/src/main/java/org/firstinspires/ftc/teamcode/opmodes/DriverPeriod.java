@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -12,7 +12,6 @@ import org.firstinspires.ftc.teamcode.utils.GamepadValueMonitor;
  * Created by Rashid on 11/18/2017.
  */
 
-@TeleOp(name = "Driver Mode Test", group = "Tests")
 public class DriverPeriod extends LinearOpMode {
 
     private static final double LINEARACTUATOR_MAX = 0.82;
