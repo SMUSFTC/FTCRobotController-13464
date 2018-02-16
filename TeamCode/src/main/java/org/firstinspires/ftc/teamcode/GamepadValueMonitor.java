@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.utils;
+package org.firstinspires.ftc.teamcode;
 
 import android.support.annotation.NonNull;
 
@@ -8,6 +8,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Created by alex.fanat on 9/26/2017.
@@ -20,7 +21,7 @@ public class GamepadValueMonitor
 
     public static class MonitoredValue<T>
     {
-        public enum UpdateMode { TICK, CHANGE, CUSTOM}
+        public enum UpdateMode { TICK, CHANGE, CUSTOM }
 
         public void updateValue()
         {
@@ -35,14 +36,31 @@ public class GamepadValueMonitor
 
         public T currentValue, previousValue;
         public UpdateMode activeUpdateMode = UpdateMode.TICK;
+        
+        boolean showTelemetryInformation = false;
     }
 
-    public static class MonitoredGamepadValue<T> extends MonitoredValue<T> { public boolean active = false; public String identifier = "MonitoredGamepadValue"; }
+    public static class MonitoredGamepadValue<T> extends MonitoredValue<T>
+    {
+        public boolean active = false;
+        public String identifier = "MonitoredGamepadValue";
+    }
 
+    private static int instanceCount = 0;
+
+    private static List<Boolean> telemetryLoopStatuses = new ArrayList<>();
+
+    public static boolean HALT_AND_CATCH_FIRE = false;
+
+    public int requestedMonitorThreadCount = 4;
+    public final int instanceNumber = instanceCount++;
+
+    @NonNull public String monitorID;
+    @NonNull public Telemetry activeTelemetry;
     @NonNull public Fetchable<Boolean> opModeIsActive;
-    @NonNull public Fetchable<Telemetry> activeTelemetry;
     @NonNull public List<MonitoredValue> monitoredValues;
     @NonNull public Runnable loop;
+    
     public final MonitoredGamepadValue<Boolean>
             leftStickButton = new MonitoredGamepadValue<Boolean>() {{ value = () -> targetGamepad.left_stick_button; identifier = "leftStickButton"; }},
             rightStickButton = new MonitoredGamepadValue<Boolean>() {{ value = () -> targetGamepad.right_stick_button; identifier = "rightStickButton"; }},
@@ -68,20 +86,25 @@ public class GamepadValueMonitor
 
     Gamepad targetGamepad;
 
-    public GamepadValueMonitor(Gamepad targetGamepad, @NonNull Fetchable<Boolean> opModeIsActive, @NonNull Fetchable<Telemetry> activeTelemetry)
+    public GamepadValueMonitor(Gamepad targetGamepad, @NonNull Fetchable<Boolean> opModeIsActive, @NonNull Telemetry activeTelemetry, @NonNull String monitorID)
     {
         this.targetGamepad = targetGamepad;
         this.opModeIsActive = opModeIsActive;
         this.activeTelemetry = activeTelemetry;
+        this.monitorID = monitorID;
+
+        telemetryLoopStatuses.add(instanceNumber, false);
+    }
+
+    public GamepadValueMonitor(Gamepad targetGamepad, @NonNull Fetchable<Boolean> opModeIsActive, @NonNull Telemetry activeTelemetry, @NonNull String monitorID, int requestedMonitorThreadCount)
+    {
+        this(targetGamepad, opModeIsActive, activeTelemetry, monitorID);
+        this.requestedMonitorThreadCount = requestedMonitorThreadCount;
     }
 
     public GamepadValueMonitor(@NonNull GamepadValueMonitor other)
     {
-        other.initialize();
-        monitoredValues = new ArrayList<MonitoredValue>(other.monitoredValues);
-        targetGamepad = other.targetGamepad;
-        opModeIsActive = other.opModeIsActive;
-        activeTelemetry = other.activeTelemetry;
+        this(other.targetGamepad, other.opModeIsActive, other.activeTelemetry, other.monitorID + "(Copy)", other.requestedMonitorThreadCount);
     }
 
     public void initialize()
@@ -115,32 +138,72 @@ public class GamepadValueMonitor
     public void startMonitoring(boolean initialize)
     {
         if (initialize) initialize();
-        // TODO: Create thread pool and spread out handlers.
-        activeTelemetry.fetch().addLine("The value monitoring will soon commence;");
-        activeTelemetry.fetch().update();
-        for (int i = 0; i < 4; i++)
-        new Thread(() ->
-        {
-            try
+        activeTelemetry.addLine("The value monitoring will soon commence for the \"" + monitorID + "\" monitor.");
+        for (int i = 0; i < requestedMonitorThreadCount; i++)
+            new Thread(() ->
             {
-                while (opModeIsActive.fetch())
+                try
                 {
-                    for (MonitoredValue monitoredValue : monitoredValues)
+                    while (opModeIsActive.fetch())
                     {
-                        monitoredValue.updateValue();
-                        activeTelemetry.fetch().addLine("\n" + (monitoredValue instanceof MonitoredGamepadValue ? "Value \tID: " + ((MonitoredGamepadValue) monitoredValue).identifier + "\n" + monitoredValue.currentValue : "") + "\tCurrent: " + monitoredValue.currentValue + "\n\tPrevious: " + monitoredValue.previousValue + "\n\tLatest: " + monitoredValue.value.fetch());
-                        activeTelemetry.fetch().update();
+                        setTelemetryLoopStatus(false);
+                        for (MonitoredValue monitoredValue : monitoredValues)
+                        {
+                            monitoredValue.updateValue();
+                            if (monitoredValue.showTelemetryInformation)
+                            {
+                                activeTelemetry.addLine("\n" + (monitoredValue instanceof MonitoredGamepadValue ? "Value \tID: " + ((MonitoredGamepadValue) monitoredValue).identifier + "\n" + monitoredValue.currentValue : "") + "\tCurrent: " + monitoredValue.currentValue + "\n\tPrevious: " + monitoredValue.previousValue + "\n\tLatest: " + monitoredValue.value.fetch() + "\n\tMonitor ID: " + monitorID);
+                            }
+                        }
+                        if (HALT_AND_CATCH_FIRE)
+                            halt();
+                        setTelemetryLoopStatus(true);
+                        if (areTelemetryLoopsComplete())
+                            activeTelemetry.update();
                     }
                 }
-            }
-            catch (Exception exception)
+                catch (Exception exception) { processException(exception); }
+            }).start();
+        if (loop != null)
+            new Thread(() ->
             {
-                activeTelemetry.fetch().setAutoClear(false);
-                activeTelemetry.fetch().addLine("[ERROR] An exception has occurred during the monitoring process.\n\t[INFO] Type of Exception: " + (exception.toString().indexOf(':') != -1 ? exception.toString().substring(0, exception.toString().indexOf(':')) : exception.toString()) + "\n\t[INFO] Message: " + exception.getMessage() + "\n\t[INFO] Stack Trace: ");
-                for (StackTraceElement stackTraceElement : exception.getStackTrace()) activeTelemetry.fetch().addLine(stackTraceElement.toString());
-                activeTelemetry.fetch().update();
-            }
-        }).start();
-        if (loop != null) new Thread(() -> { while (opModeIsActive.fetch()) loop.run(); } ).start();
+                try
+                {
+                    while (opModeIsActive.fetch())
+                        loop.run();
+                    if (HALT_AND_CATCH_FIRE)
+                        halt();
+                }
+                catch (Exception exception) { processException(exception); }
+            }).start();
+    }
+
+    public void halt()
+    {
+        HALT_AND_CATCH_FIRE = true;
+        setTelemetryLoopStatus(false);
+        activeTelemetry.addLine("[WARNING] Full operations stop requested.");
+        activeTelemetry.update();
+    }
+
+    private void setTelemetryLoopStatus(boolean value)
+    {
+        telemetryLoopStatuses.set(instanceNumber, value);
+    }
+
+    private boolean areTelemetryLoopsComplete()
+    {
+        boolean areTelemetryLoopsComplete = true;
+        for (boolean status: telemetryLoopStatuses)
+            areTelemetryLoopsComplete = areTelemetryLoopsComplete && status;
+        return areTelemetryLoopsComplete;
+    }
+
+    private void processException(Exception exception)
+    {
+        HALT_AND_CATCH_FIRE = true;
+        activeTelemetry.addLine("[ERROR] An exception has occurred during the monitoring process on the \"" + monitorID + "\" monitor.\n\t[INFO] Type of Exception: " + (exception.toString().indexOf(':') != -1 ? exception.toString().substring(0, exception.toString().indexOf(':')) : exception.toString()) + "\n\t[INFO] Message: " + exception.getMessage() + "\n\t[INFO] Stack Trace: ");
+        for (StackTraceElement stackTraceElement : exception.getStackTrace()) activeTelemetry.addLine(stackTraceElement.toString());
+        activeTelemetry.update();
     }
 }

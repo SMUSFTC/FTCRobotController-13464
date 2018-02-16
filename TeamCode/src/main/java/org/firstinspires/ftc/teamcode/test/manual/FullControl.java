@@ -1,34 +1,27 @@
-package org.firstinspires.ftc.teamcode.opmodes;
+package org.firstinspires.ftc.teamcode.test.manual;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.utils.GamepadValueMonitor;
+import org.firstinspires.ftc.teamcode.GamepadValueMonitor;
 
 /**
- * Created by Rashid on 11/18/2017.
+ * Created by Le Fanatics of the Alexander on 11/18/2017.
  */
 
-public class DriverPeriod extends LinearOpMode {
-
+public class FullControl extends LinearOpMode
+{
     private static final double LINEARACTUATOR_MAX = 0.82;
     private static final double LINEARACTUATOR_MIN = 0.17;
     private static final double LINEARACTUATOR_INCREMENT = 0.001;
 
-    Servo leftArmServo;
-    Servo rightArmServo;
+    private Servo leftArmServo, rightArmServo, linearActuator;
+    private DcMotor frontLeftDriveMotor, backLeftDriveMotor, frontRightDriveMotor, backRightDriveMotor;
 
-    Servo linearActuator;
-
-    DcMotor frontLeftDriveMotor;
-    DcMotor backLeftDriveMotor;
-    DcMotor frontRightDriveMotor;
-    DcMotor backRightDriveMotor;
-
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() throws InterruptedException
+    {
 
         rightArmServo = hardwareMap.servo.get("rightArmHingeServo");
         leftArmServo = hardwareMap.servo.get("leftArmHingeServo");
@@ -47,9 +40,9 @@ public class DriverPeriod extends LinearOpMode {
 
         telemetry.addLine("The connected devices have been initialized.");
         telemetry.update();
-        telemetry.setAutoClear(false);
 
-        GamepadValueMonitor valueMonitorGamepad1 = new GamepadValueMonitor(gamepad1, () -> opModeIsActive(), () -> telemetry) {{
+        GamepadValueMonitor valueMonitorGamepad1 = new GamepadValueMonitor(gamepad1, this::opModeIsActive, telemetry)
+        {{
             leftStickY.active = leftStickX.active = dPadRight.active = dPadLeft.active = true;
 
             dPadRight.updateInformer = () ->
@@ -82,7 +75,8 @@ public class DriverPeriod extends LinearOpMode {
             };
         }};
 
-        GamepadValueMonitor valueMonitorGamepad2 = new GamepadValueMonitor(gamepad2, () -> opModeIsActive(), () -> telemetry) {{
+        GamepadValueMonitor valueMonitorGamepad2 = new GamepadValueMonitor(gamepad2, this::opModeIsActive, telemetry)
+        {{
             dPadUp.updateInformer = () ->
             {
                 leftArmServo.setPosition(Servo.MAX_POSITION);
