@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.test.manual;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -8,25 +9,31 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.GamepadValueMonitor;
 
 /**
- * Created by Le Fanatics of the Alexander on 11/18/2017.
+ * Created by Le Fanatics of the Alexander on 11/18/2017
  */
 
+@TeleOp(name = "Full Control")
 public class FullControl extends LinearOpMode
 {
-    private static final double LINEARACTUATOR_MAX = 0.82;
-    private static final double LINEARACTUATOR_MIN = 0.17;
-    private static final double LINEARACTUATOR_INCREMENT = 0.001;
+    private static final double LINEAR_ACTUATOR_MAX = 0.82;
+    private static final double LINEAR_ACTUATOR_MIN = 0.17;
 
-    private Servo leftArmServo, rightArmServo, linearActuator;
+    private Servo leftArmServo, rightArmServo, linearActuator, rightLiftServo, leftLiftServo, armLiftServo;
     private DcMotor frontLeftDriveMotor, backLeftDriveMotor, frontRightDriveMotor, backRightDriveMotor;
 
     public void runOpMode() throws InterruptedException
     {
+        rightLiftServo = hardwareMap.servo.get("rightLiftServo");
+        leftLiftServo = hardwareMap.servo.get("leftLiftServo");
+
+        leftLiftServo.setDirection(Servo.Direction.REVERSE);
 
         rightArmServo = hardwareMap.servo.get("rightArmHingeServo");
         leftArmServo = hardwareMap.servo.get("leftArmHingeServo");
 
         leftArmServo.setDirection(Servo.Direction.REVERSE);
+
+        armLiftServo = hardwareMap.servo.get("armLiftServo");
 
         linearActuator = hardwareMap.servo.get("linearActuator");
 
@@ -41,7 +48,7 @@ public class FullControl extends LinearOpMode
         telemetry.addLine("The connected devices have been initialized.");
         telemetry.update();
 
-        GamepadValueMonitor valueMonitorGamepad1 = new GamepadValueMonitor(gamepad1, this::opModeIsActive, telemetry)
+        GamepadValueMonitor valueMonitorGamepad1 = new GamepadValueMonitor(gamepad1, this::opModeIsActive, telemetry, "Gamepad 1 Monitor")
         {{
             leftStickY.active = leftStickX.active = dPadRight.active = dPadLeft.active = true;
 
@@ -75,7 +82,7 @@ public class FullControl extends LinearOpMode
             };
         }};
 
-        GamepadValueMonitor valueMonitorGamepad2 = new GamepadValueMonitor(gamepad2, this::opModeIsActive, telemetry)
+        GamepadValueMonitor valueMonitorGamepad2 = new GamepadValueMonitor(gamepad2, this::opModeIsActive, telemetry, "Gamepad 2 Monitor")
         {{
             dPadUp.updateInformer = () ->
             {
@@ -99,35 +106,69 @@ public class FullControl extends LinearOpMode
             {
                 leftArmServo.setPosition(0.5);
                 rightArmServo.setPosition(0.5);
+                linearActuator.setPosition(0.5);
+                armLiftServo.setPosition(0);
             };
             start.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             start.customUpdateCondition = () -> start.currentValue;
             start.active = true;
 
-            // For some reason, the right stick's values are spread across the triggers; the y-axis is the right trigger, and the x-axis is the other trigger.
-            rightStickY.updateInformer = () -> leftArmServo.setPosition((rightStickY.currentValue / 2) + .5);
-            rightStickY.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
-            rightStickY.active = true;
+            // Push lift forwards
+            dPadRight.updateInformer = () ->
+            {
+                linearActuator.setPosition(LINEAR_ACTUATOR_MIN);
+            };
+            dPadRight.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            dPadRight.customUpdateCondition = () -> dPadRight.currentValue;
+            dPadRight.active = true;
 
-            rightStickX.updateInformer = () -> rightArmServo.setPosition((rightStickX.currentValue / 2) + .5);
-            rightStickX.activeUpdateMode = MonitoredValue.UpdateMode.CHANGE;
-            rightStickX.active = true;
+            // Pull lift backwards
+            dPadLeft.updateInformer = () ->
+            {
+                linearActuator.setPosition(LINEAR_ACTUATOR_MAX);
+            };
+            dPadLeft.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            dPadLeft.customUpdateCondition = () -> dPadLeft.currentValue;
+            dPadLeft.active = true;
 
+            // Push lift down
+            x.updateInformer = () ->
+            {
+                leftLiftServo.setPosition((leftLiftServo.getPosition() - 0.01) < 0 ? 0 : (leftLiftServo.getPosition() - 0.01));
+                rightLiftServo.setPosition((rightLiftServo.getPosition() - 0.01) < 0 ? 0 : (rightLiftServo.getPosition() - 0.01));
+            };
+            x.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            x.customUpdateCondition = () -> x.currentValue;
+            x.active = true;
+
+            // Pull lift up
             y.updateInformer = () ->
             {
-                linearActuator.setPosition(linearActuator.getPosition() + LINEARACTUATOR_INCREMENT > LINEARACTUATOR_MAX ? linearActuator.getPosition() : linearActuator.getPosition() + LINEARACTUATOR_INCREMENT);
+                leftLiftServo.setPosition((leftLiftServo.getPosition() + 0.01) > 1 ? 1 : (leftLiftServo.getPosition() + 0.01));
+                rightLiftServo.setPosition((rightLiftServo.getPosition() + 0.01) > 1 ? 1 : (rightLiftServo.getPosition() + 0.01));
             };
             y.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             y.customUpdateCondition = () -> y.currentValue;
             y.active = true;
 
+            // Push arm lift down
             a.updateInformer = () ->
             {
-                linearActuator.setPosition(linearActuator.getPosition() - LINEARACTUATOR_INCREMENT < LINEARACTUATOR_MIN ? linearActuator.getPosition() : linearActuator.getPosition() - LINEARACTUATOR_INCREMENT);
+                armLiftServo.setPosition((armLiftServo.getPosition() - 0.01) < 0 ? 0 : (armLiftServo.getPosition() - 0.01));
             };
             a.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
             a.customUpdateCondition = () -> a.currentValue;
             a.active = true;
+
+            // Pull arm lift up  v
+            b.updateInformer = () ->
+            {
+                armLiftServo.setPosition((armLiftServo.getPosition() + 0.01) > 1 ? 1 : (armLiftServo.getPosition() +  0.01));
+            };
+            b.activeUpdateMode = MonitoredValue.UpdateMode.CUSTOM;
+            b.customUpdateCondition = () -> b.currentValue;
+            b.active = true;
+
         }};
 
 
@@ -139,7 +180,5 @@ public class FullControl extends LinearOpMode
         valueMonitorGamepad1.startMonitoring(true);
         valueMonitorGamepad2.startMonitoring(true);
         while (opModeIsActive()) ;
-
-
     }
 }

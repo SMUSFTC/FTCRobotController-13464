@@ -156,7 +156,10 @@ public class GamepadValueMonitor
                             }
                         }
                         if (HALT_AND_CATCH_FIRE)
+                        {
                             halt();
+                            return;
+                        }
                         setTelemetryLoopStatus(true);
                         if (areTelemetryLoopsComplete())
                             activeTelemetry.update();
@@ -170,9 +173,14 @@ public class GamepadValueMonitor
                 try
                 {
                     while (opModeIsActive.fetch())
+                    {
                         loop.run();
-                    if (HALT_AND_CATCH_FIRE)
-                        halt();
+                        if (HALT_AND_CATCH_FIRE)
+                        {
+                            halt();
+                            return;
+                        }
+                    }
                 }
                 catch (Exception exception) { processException(exception); }
             }).start();
